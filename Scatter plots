@@ -1,0 +1,56 @@
+Coloured_by_depth_scatter_PO4.R
+
+
+library(ggplot2)
+library(ggtext)  # for element_markdown
+MT_PO4<- read_csv("~/Desktop/MT_PO4.csv")
+bpp_long <- melt(bpp, id = "Depth")
+bpp_long$Depth <- factor(bpp_long$Depth, c("SRF", "DCM", "MES"))
+
+ggplot(bpp_long, aes(x = variable, y = value, fill = Depth)) +
+  stat_boxplot(geom = 'errorbar') +
+  geom_boxplot(outlier.colour = 'grey',
+               outlier.shape = 1,
+               outlier.size = 1) + 
+  scale_fill_manual(values = c("yellow", "darkgreen", "deepskyblue3")) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(color = "black", size = 20, face = "bold"),
+    axis.text.y = element_text(color = "black", size = 12, face = "bold"),
+    axis.title.y = element_markdown(),
+    axis.text = element_text(size = 12, face = "bold"),
+    axis.title = element_text(size = 20, face = "bold"),
+    legend.position = "none"   # removes legend entirely
+  ) +
+  ylim(0, 0.6) +
+  labs(
+    x = "",
+    y = "*bpp* gene and transcript abundance") +
+
+  annotate("text", x = 1, y = 0.6, label = "Kruskal Wallis p= 1.5 x 10-7", fontface = "bold", size=6) +
+  annotate("text", x = 2, y = 0.6, label = "Kruskal Wallis p= 0.0103", fontface = "bold", size=6) +
+  annotate("text", x = 1, y = 0.56, label = "SRF-DCM p=0.49", fontface = "bold", size=5) +
+  annotate("text", x = 1, y = 0.53, label = "SRF-MES p=2.5e-07", fontface = "bold", size=5) +
+  annotate("text", x = 1, y = 0.5, label = "DCM-MES p=7.1e-06", fontface = "bold", size=5) +
+  annotate("text", x = 2, y = 0.56, label = "SRF-DCM p=0.060", fontface = "bold", size=5) +
+  annotate("text", x = 2, y = 0.53, label = "SRF-MES p=0.060", fontface = "bold", size=5) +
+  annotate("text", x = 2, y = 0.5, label = "DCM-MES p=0.015", fontface = "bold", size=5) 
+
+ggsave(
+  filename = "/Users/leannemurray/Desktop/BOXPLOTS/bpp2_boxplot.tiff", 
+  device = "tiff",
+  width = 8, height = 6, 
+  dpi = 600, 
+  compression = "lzw"
+)
+
+kruskal.test(Gene ~ Depth, data = bpp)
+kruskal.test(Transcript ~ Depth, data = bpp)
+
+pairwise.wilcox.test(bpp$Gene, bpp$Depth,
+                     p.adjust.method = "BH")
+pairwise.wilcox.test(bpp$Transcript, bpp$Depth,
+                     p.adjust.method = "BH")
+
+
+  

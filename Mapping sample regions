@@ -1,0 +1,114 @@
+
+# -----------------------------
+# World map of sample sites + boxed ocean labels
+# Points colored by Depth: SRF=yellow, DCM=green, MES=blue
+# Transparency added to reduce overplotting
+# -----------------------------
+
+# Install packages if needed:
+# install.packages(c("ggplot2", "sf", "rnaturalearth", "rnaturalearthdata", "ggrepel"))
+
+library(ggplot2)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(ggrepel)
+
+# -----------------------------
+# Read sample data
+# -----------------------------
+samples<- read_csv("~/Desktop/MAP.csv") 
+
+# Ensure expected column names exist
+stopifnot(all(c("Depth", "Latitude", "Longitude") %in% names(samples)))
+
+# Make Depth an ordered factor so plotting/legend order is consistent
+samples$Depth <- toupper(trimws(samples$Depth))
+samples$Depth <- factor(samples$Depth, levels = c("SRF", "DCM", "MES"))
+
+# Drop rows with missing coordinates
+samples <- samples[!is.na(samples$Latitude) & !is.na(samples$Longitude), ]
+
+# -----------------------------
+# Load world map
+# -----------------------------
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+# -----------------------------
+# Ocean region label positions (adjust if you want)
+# -----------------------------
+ocean_labels <- data.frame(
+  region = c(
+    "Atlantic Ocean",
+    "Indian Ocean",
+    "Mediterranean Sea",
+    "North Atlantic Ocean",
+    "North Pacific Ocean",
+    "Red Sea",
+    "South Atlantic Ocean",
+    "Southern Ocean",
+    "South Pacific Ocean"
+  ),
+  lon = c(-30, 75, 18, -40, -160, 40, -15, 0, -120),
+  lat = c(  0,-20, 35,  35,   35, 20, -30,-60,  -30)
+)
+
+# -----------------------------
+# Build plot
+# -----------------------------
+p <- ggplot() +
+  # Base map
+  geom_sf(data = world, fill = "grey90", color = "grey70") +
+  
+  # Sample points (transparent to reduce overlap)
+  geom_point(
+    data = samples,
+    aes(x = Longitude, y = Latitude, color = Depth, shape = Depth),
+    size = 5,
+    alpha = 0.5
+  ) +
+  
+  # Manual depth colors
+  scale_color_manual(
+    values = c("SRF" = "yellow", "DCM" = "forestgreen", "MES" = "dodgerblue2"),
+    drop = FALSE
+  ) +
+  scale_shape_manual(
+    values = c(
+      "SRF" = 16,  # solid circle
+      "DCM" = 17,  # solid triangle
+      "MES" = 15   # solid square
+    )
+  ) +
+  
+  
+  # Boxed labels (pop-out boxes)
+  geom_label_repel(
+    data = ocean_labels,
+    aes(x = lon, y = lat, label = region),
+    size = 5,
+    fontface = "italic",
+    fill = "white",
+    color = "black",
+    label.size = 0.3,
+    alpha = 0.7,
+    box.padding = 0.4,
+    point.padding = 0.2
+  ) +
+  
+  coord_sf(expand = FALSE) +
+  theme_minimal() +
+  labs(
+    title = "Global distribution of sampling sites",
+    x = "Longitude",
+    y = "Latitude",
+    color = "Depth"
+  )
+
+# Display
+print(p)
+
+# -----------------------------
+# Save figure
+# -----------------------------
+ggsave("sample_sites_world_map2.png", plot = p, width = 12, height = 6, dpi = 300)
